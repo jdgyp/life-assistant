@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Weekly Planner</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #f8f7f4;
+      --surface: #ffffff;
+      --border: #e8e4de;
+      --accent: #4f6ef7;
+      --accent-light: #eef0fe;
+      --text: #1a1a1a;
+      --muted: #888;
+      --breakfast: #fff7ed;
+      --lunch: #f0fdf4;
+      --dinner: #fdf4ff;
+      --task: #f0f9ff;
+      --radius: 12px;
+      --shadow: 0 1px 4px rgba(0,0,0,0.08);
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 16px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    .logo { font-size: 18px; font-weight: 700; letter-spacing: -0.5px; }
+    .logo span { color: var(--accent); }
+
+    .week-nav {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .week-label {
+      font-size: 14px;
+      font-weight: 600;
+      min-width: 160px;
+      text-align: center;
+    }
+
+    .nav-btn {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 6px 12px;
+      cursor: pointer;
+      font-size: 16px;
+      transition: background 0.15s;
+    }
+    .nav-btn:hover { background: var(--accent-light); }
+
+    .today-btn {
+      font-size: 13px;
+      color: var(--accent);
+      background: var(--accent-light);
+      border: none;
+      border-radius: 8px;
+      padding: 6px 12px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    main {
+      max-width: 1200px;
+      margin: 24px auto;
+      padding: 0 16px 80px;
+      display: grid;
+      grid-template-columns: 1fr 320px;
+      gap: 20px;
+    }
+
+    @media (max-width: 900px) {
+      main { grid-template-columns: 1fr; }
+    }
+
+    .days-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 8px;
+    }
+
+    @media (max-width: 700px) {
+      .days-grid { grid-template-columns: 1fr; }
+    }
+
+    .day-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      box-shadow: var(--shadow);
+    }
+
+    .day-card.today { border-color: var(--accent); }
+
+    .day-header {
+      padding: 10px 12px 8px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .day-name {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--muted);
+      font-weight: 600;
+    }
+
+    .day-date {
+      font-size: 20px;
+      font-weight: 700;
+      line-height: 1.2;
+    }
+
+    .today .day-date {
+      color: var(--accent);
+    }
+
+    .meal-slot {
+      padding: 8px 10px;
+      border-bottom: 1px solid var(--border);
+    }
+    .meal-slot:last-child { border-bottom: none; }
+
+    .meal-label {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      margin-bottom: 4px;
+    }
+
+    .slot-breakfast { background: var(--breakfast); }
+    .slot-breakfast .meal-label { color: #c2640a; }
+    .slot-lunch { background: var(--lunch); }
+    .slot-lunch .meal-label { color: #15803d; }
+    .slot-dinner { background: var(--dinner); }
+    .slot-dinner .meal-label { color: #7c3aed; }
+    .slot-tasks { background: var(--task); }
+    .slot-tasks .meal-label { color: #0369a1; }
+
+    .meal-input {
+      width: 100%;
+      background: transparent;
+      border: none;
+      outline: none;
+      font-size: 12px;
+      color: var(--text);
+      resize: none;
+      font-family: inherit;
+      line-height: 1.4;
+      min-height: 28px;
+    }
+
+    .meal-input::placeholder { color: #bbb; }
+
+    /* Shopping list */
+    .sidebar-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      position: sticky;
+      top: 73px;
+    }
+
+    .sidebar-header {
+      padding: 16px 18px 12px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .sidebar-title { font-size: 15px; font-weight: 700; }
+
+    .clear-btn {
+      font-size: 12px;
+      color: var(--muted);
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 2px 6px;
+      border-radius: 6px;
+    }
+    .clear-btn:hover { background: #fee2e2; color: #dc2626; }
+
+    .shopping-input-row {
+      display: flex;
+      gap: 8px;
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .shopping-input {
+      flex: 1;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 7px 10px;
+      font-size: 13px;
+      outline: none;
+      font-family: inherit;
+    }
+    .shopping-input:focus { border-color: var(--accent); }
+
+    .add-btn {
+      background: var(--accent);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 7px 14px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .add-btn:hover { background: #3d5ae0; }
+
+    .shopping-list {
+      padding: 8px 14px;
+      max-height: 400px;
+      overflow-y: auto;
+    }
+
+    .shopping-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 7px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .shopping-item:last-child { border-bottom: none; }
+
+    .shopping-item input[type="checkbox"] {
+      width: 16px;
+      height: 16px;
+      accent-color: var(--accent);
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    .item-text {
+      flex: 1;
+      font-size: 13px;
+      transition: opacity 0.15s;
+    }
+    .item-text.done {
+      text-decoration: line-through;
+      opacity: 0.45;
+    }
+
+    .item-delete {
+      background: none;
+      border: none;
+      color: #ccc;
+      cursor: pointer;
+      font-size: 15px;
+      padding: 2px 4px;
+      border-radius: 4px;
+    }
+    .item-delete:hover { color: #dc2626; background: #fee2e2; }
+
+    .empty-state {
+      padding: 20px;
+      text-align: center;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .progress-bar {
+      height: 3px;
+      background: var(--border);
+      margin: 0 14px 8px;
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      background: var(--accent);
+      border-radius: 2px;
+      transition: width 0.3s;
+    }
+
+    .section-label {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--muted);
+      margin-bottom: 10px;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">Life <span>Assistant</span></div>
+  <div class="week-nav">
+    <button class="nav-btn" id="prevWeek">&#8592;</button>
+    <span class="week-label" id="weekLabel"></span>
+    <button class="nav-btn" id="nextWeek">&#8594;</button>
+    <button class="today-btn" id="todayBtn">Today</button>
+  </div>
+</header>
+
+<main>
+  <div>
+    <div class="section-label" style="margin-bottom:10px;">Week at a glance</div>
+    <div class="days-grid" id="daysGrid"></div>
+  </div>
+
+  <div>
+    <div class="section-label" style="margin-bottom:10px;">Shopping list</div>
+    <div class="sidebar-card">
+      <div class="sidebar-header">
+        <span class="sidebar-title">🛒 Items</span>
+        <button class="clear-btn" id="clearDone">Clear done</button>
+      </div>
+      <div class="shopping-input-row">
+        <input class="shopping-input" id="newItem" placeholder="Add item…" />
+        <button class="add-btn" id="addItemBtn">Add</button>
+      </div>
+      <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+      <div class="shopping-list" id="shoppingList"></div>
+    </div>
+  </div>
+</main>
+
+<script>
+  const DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  const SLOTS = [
+    { key: 'breakfast', label: 'Breakfast', cls: 'slot-breakfast', placeholder: 'What\'s for breakfast?' },
+    { key: 'lunch',     label: 'Lunch',     cls: 'slot-lunch',     placeholder: 'What\'s for lunch?' },
+    { key: 'dinner',    label: 'Dinner',    cls: 'slot-dinner',    placeholder: 'What\'s for dinner?' },
+    { key: 'tasks',     label: 'Notes',     cls: 'slot-tasks',     placeholder: 'Tasks, logistics…' },
+  ];
+
+  let weekOffset = 0;
+
+  function getMondayOf(offset = 0) {
+    const d = new Date();
+    const day = d.getDay();
+    const diff = (day === 0 ? -6 : 1 - day);
+    d.setDate(d.getDate() + diff + offset * 7);
+    d.setHours(0,0,0,0);
+    return d;
+  }
+
+  function dateKey(date) {
+    return date.toISOString().slice(0,10);
+  }
+
+  function isToday(date) {
+    return dateKey(date) === dateKey(new Date());
+  }
+
+  function loadData(key) {
+    return JSON.parse(localStorage.getItem(key) || '{}');
+  }
+
+  function saveData(key, val) {
+    localStorage.setItem(key, JSON.stringify(val));
+  }
+
+  function formatWeekLabel(monday) {
+    const friday = new Date(monday);
+    friday.setDate(monday.getDate() + 6);
+    const opts = { day: 'numeric', month: 'short' };
+    return `${monday.toLocaleDateString('en-GB', opts)} – ${friday.toLocaleDateString('en-GB', opts)}`;
+  }
+
+  function renderWeek() {
+    const monday = getMondayOf(weekOffset);
+    document.getElementById('weekLabel').textContent = formatWeekLabel(monday);
+
+    const grid = document.getElementById('daysGrid');
+    grid.innerHTML = '';
+
+    for (let i = 0; i < 7; i++) {
+      const date = new Date(monday);
+      date.setDate(monday.getDate() + i);
+      const dk = dateKey(date);
+      const dayData = loadData('day_' + dk);
+
+      const card = document.createElement('div');
+      card.className = 'day-card' + (isToday(date) ? ' today' : '');
+
+      const header = document.createElement('div');
+      header.className = 'day-header';
+      header.innerHTML = `<div class="day-name">${DAYS[i]}</div><div class="day-date">${date.getDate()}</div>`;
+      card.appendChild(header);
+
+      SLOTS.forEach(slot => {
+        const slotEl = document.createElement('div');
+        slotEl.className = `meal-slot ${slot.cls}`;
+
+        const label = document.createElement('div');
+        label.className = 'meal-label';
+        label.textContent = slot.label;
+
+        const input = document.createElement('textarea');
+        input.className = 'meal-input';
+        input.placeholder = slot.placeholder;
+        input.value = dayData[slot.key] || '';
+        input.rows = 2;
+
+        input.addEventListener('input', () => {
+          input.style.height = 'auto';
+          input.style.height = input.scrollHeight + 'px';
+          const d = loadData('day_' + dk);
+          d[slot.key] = input.value;
+          saveData('day_' + dk, d);
+        });
+
+        // Auto-resize on load
+        setTimeout(() => {
+          input.style.height = 'auto';
+          input.style.height = input.scrollHeight + 'px';
+        }, 0);
+
+        slotEl.appendChild(label);
+        slotEl.appendChild(input);
+        card.appendChild(slotEl);
+      });
+
+      grid.appendChild(card);
+    }
+  }
+
+  // Shopping list
+  function loadItems() {
+    return JSON.parse(localStorage.getItem('shopping') || '[]');
+  }
+
+  function saveItems(items) {
+    localStorage.setItem('shopping', JSON.stringify(items));
+  }
+
+  function renderShopping() {
+    const items = loadItems();
+    const list = document.getElementById('shoppingList');
+    const fill = document.getElementById('progressFill');
+
+    if (items.length === 0) {
+      list.innerHTML = '<div class="empty-state">No items yet — add something above</div>';
+      fill.style.width = '0%';
+      return;
+    }
+
+    const done = items.filter(i => i.checked).length;
+    fill.style.width = items.length ? (done / items.length * 100) + '%' : '0%';
+
+    list.innerHTML = '';
+    items.forEach((item, idx) => {
+      const row = document.createElement('div');
+      row.className = 'shopping-item';
+
+      const cb = document.createElement('input');
+      cb.type = 'checkbox';
+      cb.checked = item.checked;
+      cb.addEventListener('change', () => {
+        items[idx].checked = cb.checked;
+        saveItems(items);
+        renderShopping();
+      });
+
+      const text = document.createElement('span');
+      text.className = 'item-text' + (item.checked ? ' done' : '');
+      text.textContent = item.text;
+
+      const del = document.createElement('button');
+      del.className = 'item-delete';
+      del.textContent = '×';
+      del.title = 'Remove';
+      del.addEventListener('click', () => {
+        items.splice(idx, 1);
+        saveItems(items);
+        renderShopping();
+      });
+
+      row.appendChild(cb);
+      row.appendChild(text);
+      row.appendChild(del);
+      list.appendChild(row);
+    });
+  }
+
+  function addItem() {
+    const input = document.getElementById('newItem');
+    const text = input.value.trim();
+    if (!text) return;
+    const items = loadItems();
+    items.push({ text, checked: false });
+    saveItems(items);
+    input.value = '';
+    renderShopping();
+  }
+
+  // Event listeners
+  document.getElementById('prevWeek').addEventListener('click', () => { weekOffset--; renderWeek(); });
+  document.getElementById('nextWeek').addEventListener('click', () => { weekOffset++; renderWeek(); });
+  document.getElementById('todayBtn').addEventListener('click', () => { weekOffset = 0; renderWeek(); });
+
+  document.getElementById('addItemBtn').addEventListener('click', addItem);
+  document.getElementById('newItem').addEventListener('keydown', e => {
+    if (e.key === 'Enter') addItem();
+  });
+
+  document.getElementById('clearDone').addEventListener('click', () => {
+    const items = loadItems().filter(i => !i.checked);
+    saveItems(items);
+    renderShopping();
+  });
+
+  // Init
+  renderWeek();
+  renderShopping();
+</script>
+</body>
+</html>
